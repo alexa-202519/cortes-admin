@@ -236,13 +236,15 @@ export async function fetchCutOrders(): Promise<CutOrder[]> {
         )
       `,
     )
+    .returns<SupabaseCutOrder[]>()
     .order("creado_en", { ascending: false });
 
   if (error) {
     throw new Error(`No se pudieron cargar las órdenes: ${error.message}`);
   }
 
-  return (data ?? []).map(mapCutOrder);
+  const orders = (data ?? []) as SupabaseCutOrder[];
+  return orders.map(mapCutOrder);
 }
 
 export type CreateBundleInput = {
