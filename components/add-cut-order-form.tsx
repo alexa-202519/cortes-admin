@@ -1,8 +1,9 @@
 "use client";
 
-import { FormEvent, useState } from "react";
+import { FormEvent, useState, useEffect } from "react";
 import { createCutOrder } from "@/lib/services/cut-orders";
-import { LOCATION_CODES } from "@/constants/locations";
+import { fetchLocations, type Location } from "@/lib/services/locations";
+import { LocationSelect } from "@/components/location-select";
 
 type BundleInput = {
   id: string;
@@ -12,6 +13,7 @@ type BundleInput = {
   selected: boolean;
   sscc: string;
   luid: string;
+  num_bobina?: string;
 };
 
 type Props = {
@@ -30,6 +32,7 @@ const createBundles = (count: number, previous: BundleInput[] = []) => {
       selected: existing?.selected ?? false,
       sscc: existing?.sscc ?? "",
       luid: existing?.luid ?? "",
+      num_bobina: existing?.num_bobina ?? "",
     };
   });
 };
@@ -48,6 +51,27 @@ export function AddCutOrderForm({ onCancel, onCreated }: Props) {
     type: "success" | "error";
     text: string;
   } | null>(null);
+  const [locations, setLocations] = useState<Location[]>([]);
+  const [isLoadingLocations, setIsLoadingLocations] = useState(true);
+
+  useEffect(() => {
+    const loadLocations = async () => {
+      try {
+        setIsLoadingLocations(true);
+        const data = await fetchLocations();
+        setLocations(data);
+      } catch (error) {
+        console.error("Error al cargar ubicaciones:", error);
+        setSubmitFeedback({
+          type: "error",
+          text: "No se pudieron cargar las ubicaciones. Intenta recargar la página.",
+        });
+      } finally {
+        setIsLoadingLocations(false);
+      }
+    };
+    loadLocations();
+  }, []);
 
   const handleBundleCountChange = (value: string) => {
     const parsed = Number.parseInt(value, 10);
@@ -112,6 +136,7 @@ export function AddCutOrderForm({ onCancel, onCreated }: Props) {
       sheets: bundle.sheets ? Number(bundle.sheets) : undefined,
       sscc: bundle.sscc,
       luid: bundle.luid,
+      num_bobina: bundle.num_bobina,
     }));
 
     try {
@@ -217,36 +242,28 @@ export function AddCutOrderForm({ onCancel, onCreated }: Props) {
               <label className="text-xs font-semibold uppercase tracking-wide text-[var(--primary)]">
                 Todos
               </label>
-              <select
+              <LocationSelect
                 value={allLocation}
-                onChange={(event) => handleAssignAll(event.target.value)}
-                className="mt-2 w-full rounded-md border border-[var(--primary-muted)] bg-white px-4 py-2 text-sm text-[var(--primary-dark)] focus:border-[var(--primary)] focus:outline-none"
-              >
-                <option value="">Selecciona una ubicación</option>
-                {LOCATION_CODES.map((code) => (
-                  <option key={code} value={code}>
-                    {code}
-                  </option>
-                ))}
-              </select>
+                onChange={handleAssignAll}
+                locations={locations}
+                disabled={isLoadingLocations}
+                placeholder="Selecciona una ubicación"
+                className="mt-2"
+              />
             </div>
             <div className="grid gap-2 sm:grid-cols-[1fr_auto] sm:items-end">
               <div>
                 <label className="text-xs font-semibold uppercase tracking-wide text-[var(--primary)]">
                   Solo selección
                 </label>
-                <select
+                <LocationSelect
                   value={selectionLocation}
-                  onChange={(event) => setSelectionLocation(event.target.value)}
-                  className="mt-2 w-full rounded-md border border-[var(--primary-muted)] bg-white px-4 py-2 text-sm text-[var(--primary-dark)] focus:border-[var(--primary)] focus:outline-none"
-                >
-                  <option value="">Selecciona una ubicación</option>
-                  {LOCATION_CODES.map((code) => (
-                    <option key={code} value={code}>
-                      {code}
-                    </option>
-                  ))}
-                </select>
+                  onChange={setSelectionLocation}
+                  locations={locations}
+                  disabled={isLoadingLocations}
+                  placeholder="Selecciona una ubicación"
+                  className="mt-2"
+                />
               </div>
               <button
                 type="button"
@@ -290,26 +307,21 @@ export function AddCutOrderForm({ onCancel, onCreated }: Props) {
                       />
                       {bundle.name}
                     </label>
-                    <select
+                    <LocationSelect
                       value={bundle.location}
-                      onChange={(event) =>
+                      onChange={(value) =>
                         setBundles((prev) =>
                           prev.map((item, itemIndex) =>
                             itemIndex === index
-                              ? { ...item, location: event.target.value }
+                              ? { ...item, location: value }
                               : item,
                           ),
                         )
                       }
-                    className="w-full rounded-md border border-[var(--primary-muted)] bg-white px-3 py-2 text-sm text-[var(--primary-dark)] focus:border-[var(--primary)] focus:outline-none"
-                  >
-                      <option value="">Selecciona una ubicación</option>
-                      {LOCATION_CODES.map((code) => (
-                        <option key={code} value={code}>
-                          {code}
-                        </option>
-                      ))}
-                    </select>
+                      locations={locations}
+                      disabled={isLoadingLocations}
+                      placeholder="Selecciona una ubicación"
+                    />
                   </div>
                   <div className="flex items-center gap-2 text-sm text-[var(--primary)] sm:flex-1">
                     <span className="font-semibold uppercase tracking-wide">Láminas: </span>
@@ -330,7 +342,7 @@ export function AddCutOrderForm({ onCancel, onCreated }: Props) {
                     />
                   </div>
                 </div>
-                <div className="mt-2 grid grid-cols-2 gap-4">
+                <div className="mt-2 grid grid-cols-1 sm:grid-cols-3 gap-4">
                   <div>
                     <label className="text-xs font-semibold uppercase tracking-wide text-[var(--primary)]">
                       SSCC
@@ -360,6 +372,24 @@ export function AddCutOrderForm({ onCancel, onCreated }: Props) {
                           prev.map((item, itemIndex) =>
                             itemIndex === index
                               ? { ...item, luid: event.target.value }
+                              : item,
+                          ),
+                        )
+                      }
+                      className="mt-1 w-full rounded-md border border-[var(--primary-muted)] px-3 py-1.5 text-sm text-[var(--primary-dark)] focus:border-[var(--primary)] focus:outline-none"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-xs font-semibold uppercase tracking-wide text-[var(--primary)]">
+                      NUM BOBINA
+                    </label>
+                    <input
+                      value={bundle.num_bobina}
+                      onChange={(event) =>
+                        setBundles((prev) =>
+                          prev.map((item, itemIndex) =>
+                            itemIndex === index
+                              ? { ...item, num_bobina: event.target.value }
                               : item,
                           ),
                         )

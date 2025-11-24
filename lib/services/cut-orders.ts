@@ -57,6 +57,7 @@ type SupabaseBundle = {
   creado_en?: string | null;
   SSCC?: string | null;
   LUID?: string | null;
+  num_bobina?: string | null;
 };
 
 type SupabaseCutOrder = {
@@ -160,6 +161,7 @@ const mapBundle = (bundle: SupabaseBundle): Bundle => {
     status: statusInfo?.badge ?? "Sin estado",
     sscc: bundle.SSCC ?? "",
     luid: bundle.LUID ?? "",
+    num_bobina: bundle.num_bobina ?? "",
     history,
   };
 };
@@ -231,6 +233,7 @@ export async function fetchCutOrders(): Promise<CutOrder[]> {
           creado_en,
           SSCC,
           LUID,
+          num_bobina,
           ubicacion:ubicaciones ( id, codigo ),
           historial:historial_bultos (
             id,
@@ -263,6 +266,7 @@ export type CreateBundleInput = {
   history?: BundleHistoryEntry[];
   sscc?: string;
   luid?: string;
+  num_bobina?: string;
 };
 
 export type CreateCutOrderInput = {
@@ -389,6 +393,7 @@ export async function createCutOrder(input: CreateCutOrderInput) {
       estado: bundleStatusFromInput(bundle.status),
       SSCC: bundle.sscc || null,
       LUID: bundle.luid || null,
+      num_bobina: bundle.num_bobina || null,
     };
   });
 

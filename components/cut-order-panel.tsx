@@ -473,6 +473,47 @@ export function CutOrderPanel({ order, onRequestReload }: Props) {
                 </div>
               </div>
 
+              {/* Additional identifiers row: num bobina, LUID, SSCC */}
+              <div className="mt-2 grid grid-cols-2 gap-3 text-[13px] text-[var(--primary)] sm:grid-cols-4">
+                <div className="flex flex-col">
+                  <span className="text-[11px] font-semibold uppercase tracking-wide">
+                    Num. de bobina
+                  </span>
+                  <span className="font-semibold text-[var(--primary-dark)]">
+                    {activeBundle.num_bobina && activeBundle.num_bobina.trim().length > 0
+                      ? activeBundle.num_bobina
+                      : "-"}
+                  </span>
+                </div>
+                <div className="flex flex-col">
+                  <span className="text-[11px] font-semibold uppercase tracking-wide">
+                    LUID
+                  </span>
+                  <span className="font-semibold text-[var(--primary-dark)]">
+                    {activeBundle.luid && activeBundle.luid.trim().length > 0
+                      ? activeBundle.luid
+                      : "-"}
+                  </span>
+                </div>
+                <div className="flex flex-col">
+                  <span className="text-[11px] font-semibold uppercase tracking-wide">
+                    SSCC
+                  </span>
+                  <span className="font-semibold text-[var(--primary-dark)]">
+                    {activeBundle.sscc && activeBundle.sscc.trim().length > 0
+                      ? activeBundle.sscc
+                      : "-"}
+                  </span>
+                </div>
+                <div className="flex flex-col" aria-hidden>
+                  {/* empty placeholder for 4th column alignment */}
+                  <span className="text-[11px] font-semibold uppercase tracking-wide">
+                    &nbsp;
+                  </span>
+                  <span className="font-semibold text-[var(--primary-dark)]">&nbsp;</span>
+                </div>
+              </div>
+
               <div className="mt-6 flex flex-1 flex-col overflow-hidden">
                 <p className="text-xs font-semibold uppercase tracking-wide text-[var(--primary)]">
                   Historial

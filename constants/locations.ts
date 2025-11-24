@@ -1,3 +1,11 @@
+/**
+ * @deprecated Este archivo contiene datos estáticos de ubicaciones.
+ * Para obtener ubicaciones dinámicas desde la base de datos, 
+ * usa el servicio: import { fetchLocations } from "@/lib/services/locations"
+ * 
+ * Este archivo se mantiene solo para retrocompatibilidad con el servicio cut-orders.ts
+ */
+
 export const LOCATION_CODES = [
   "C1",
   "C2",

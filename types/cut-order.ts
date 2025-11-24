@@ -17,6 +17,7 @@ export type Bundle = {
   status: string;
   sscc: string;
   luid: string;
+  num_bobina?: string | null;
   history: BundleHistoryEntry[];
 };
 

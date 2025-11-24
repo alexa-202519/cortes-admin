@@ -1,8 +1,9 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { Bundle } from "@/types/cut-order";
-import { LOCATION_CODES } from "@/constants/locations";
+import { fetchLocations, type Location } from "@/lib/services/locations";
+import { LocationSelect } from "@/components/location-select";
 
 type DialogType = "location" | "order";
 
@@ -28,7 +29,24 @@ export function MultiBundleDialog({
 }: Props) {
   const [value, setValue] = useState("");
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [locations, setLocations] = useState<Location[]>([]);
+  const [isLoadingLocations, setIsLoadingLocations] = useState(true);
   const isLocationDialog = type === "location";
+
+  useEffect(() => {
+    const loadLocations = async () => {
+      try {
+        setIsLoadingLocations(true);
+        const data = await fetchLocations();
+        setLocations(data);
+      } catch (error) {
+        console.error("Error al cargar ubicaciones:", error);
+      } finally {
+        setIsLoadingLocations(false);
+      }
+    };
+    loadLocations();
+  }, []);
 
   const allSelected = useMemo(() => {
     if (bundles.length === 0) return false;
@@ -71,18 +89,14 @@ export function MultiBundleDialog({
           {dialogCopy[type].title}
         </h3>
         {isLocationDialog ? (
-          <select
+          <LocationSelect
             value={value}
-            onChange={(event) => setValue(event.target.value)}
-            className="mt-4 w-full rounded-md border border-[var(--primary-muted)] px-4 py-2 text-sm text-[var(--primary-dark)] focus:border-[var(--primary)] focus:outline-none"
-          >
-            <option value="">Selecciona una ubicación</option>
-            {LOCATION_CODES.map((code) => (
-              <option key={code} value={code}>
-                {code}
-              </option>
-            ))}
-          </select>
+            onChange={setValue}
+            locations={locations}
+            disabled={isLoadingLocations}
+            placeholder="Selecciona una ubicación"
+            className="mt-4"
+          />
         ) : (
           <input
             value={value}

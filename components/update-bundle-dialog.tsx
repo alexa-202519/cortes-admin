@@ -1,8 +1,9 @@
 "use client";
 
-import { useId, useMemo, useState } from "react";
+import { useId, useMemo, useState, useEffect } from "react";
 import { Bundle } from "@/types/cut-order";
-import { LOCATION_CODES } from "@/constants/locations";
+import { fetchLocations, type Location } from "@/lib/services/locations";
+import { LocationSelect } from "@/components/location-select";
 
 type Props = {
   bundle: Bundle;
@@ -33,7 +34,24 @@ export function UpdateBundleDialog({
   const [destination, setDestination] = useState(bundle.currentLocation ?? "");
   const [orderNumber, setOrderNumber] = useState("");
   const [actionMenuOpen, setActionMenuOpen] = useState(false);
+  const [locations, setLocations] = useState<Location[]>([]);
+  const [isLoadingLocations, setIsLoadingLocations] = useState(true);
   const dropdownId = useId();
+
+  useEffect(() => {
+    const loadLocations = async () => {
+      try {
+        setIsLoadingLocations(true);
+        const data = await fetchLocations();
+        setLocations(data);
+      } catch (error) {
+        console.error("Error al cargar ubicaciones:", error);
+      } finally {
+        setIsLoadingLocations(false);
+      }
+    };
+    loadLocations();
+  }, []);
 
   const normalizedDisabled = useMemo(() => {
     return new Set(disabledActions.map((value) => value.toLowerCase()));
@@ -117,18 +135,14 @@ export function UpdateBundleDialog({
               <label className="text-xs font-semibold uppercase tracking-wide text-[var(--primary)]">
                 Lugar destino
               </label>
-              <select
+              <LocationSelect
                 value={destination}
-                onChange={(event) => setDestination(event.target.value)}
-                className="mt-2 w-full rounded-md border border-[var(--primary-muted)] px-4 py-2 text-sm text-[var(--primary-dark)] focus:border-[var(--primary)] focus:outline-none"
-              >
-                <option value="">Selecciona una ubicación</option>
-                {LOCATION_CODES.map((code) => (
-                  <option key={code} value={code}>
-                    {code}
-                  </option>
-                ))}
-              </select>
+                onChange={setDestination}
+                locations={locations}
+                disabled={isLoadingLocations}
+                placeholder="Selecciona una ubicación"
+                className="mt-2"
+              />
             </div>
           ) : null}
           {action === "Asignar" ? (
