@@ -470,7 +470,7 @@ export async function splitBundle({
   const { data: bundle, error: fetchError } = await supabase
     .from("bultos")
     .select(
-      "id, orden_corte_id, numero_bulto, cantidad_laminas, ubicacion_id, estado, SSCC, LUID",
+      "id, orden_corte_id, numero_bulto, cantidad_laminas, ubicacion_id, estado, SSCC, LUID, num_bobina",
     )
     .eq("id", bundleId)
     .single();
@@ -557,6 +557,7 @@ export async function splitBundle({
       estado: bundle.estado ?? DEFAULT_BUNDLE_STATUS,
       SSCC: normalizedSplitSSCC,
       LUID: normalizedSplitLUID,
+      num_bobina: bundle.num_bobina,
     })
     .select("id");
 
