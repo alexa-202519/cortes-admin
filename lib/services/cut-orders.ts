@@ -339,11 +339,21 @@ const bundleStatusFromInput = (value?: string): BundleStatusEnum => {
 
 export async function createCutOrder(input: CreateCutOrderInput) {
   const isActive = input.status !== "Inactivo";
-  const defaultLocationCode = normalizeLocationCode(
-    input.locationFilter || input.bundles[0]?.currentLocation,
+  
+  // Validar que hay al menos un bulto con información válida
+  const validBundles = input.bundles.filter(
+    (bundle) => bundle.currentLocation && bundle.sheets && bundle.sheets > 0
   );
 
-  const locationCodes = input.bundles
+  if (validBundles.length === 0) {
+    throw new Error("Debes agregar al menos un bulto con ubicación y cantidad de láminas.");
+  }
+
+  const defaultLocationCode = normalizeLocationCode(
+    input.locationFilter || validBundles[0]?.currentLocation,
+  );
+
+  const locationCodes = validBundles
     .map((bundle) => normalizeLocationCode(bundle.currentLocation))
     .filter((code): code is string => Boolean(code));
 
@@ -358,7 +368,7 @@ export async function createCutOrder(input: CreateCutOrderInput) {
     .insert({
       numero_orden: input.code,
       fecha: input.date,
-      cantidad_bultos: input.bundles.length,
+      cantidad_bultos: validBundles.length,
       activo: isActive,
     })
     .select("id")
@@ -374,11 +384,7 @@ export async function createCutOrder(input: CreateCutOrderInput) {
     throw new Error("La respuesta de Supabase no incluyó el id de la orden.");
   }
 
-  if (input.bundles.length === 0) {
-    return orderId;
-  }
-
-  const bundlesPayload = input.bundles.map((bundle, index) => {
+  const bundlesPayload = validBundles.map((bundle, index) => {
     const fallbackCode = normalizeLocationCode(bundle.currentLocation) || defaultLocationCode;
     const locationId = fallbackCode ? locationsMap[fallbackCode] ?? null : null;
     return {

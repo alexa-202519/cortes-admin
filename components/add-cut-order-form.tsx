@@ -139,13 +139,26 @@ export function AddCutOrderForm({ onCancel, onCreated }: Props) {
       num_bobina: bundle.num_bobina,
     }));
 
+    // Validar que hay al menos un bulto con información completa
+    const validBundles = normalizedBundles.filter(
+      (bundle) => bundle.currentLocation && bundle.sheets && bundle.sheets > 0
+    );
+
+    if (validBundles.length === 0) {
+      setSubmitFeedback({
+        type: "error",
+        text: "Debes agregar al menos un bulto con ubicación y cantidad de láminas.",
+      });
+      return;
+    }
+
     try {
       setIsSubmitting(true);
       await createCutOrder({
         code: orderNumber,
         date: orderDate,
         locationFilter: allLocation || undefined,
-        bundles: normalizedBundles,
+        bundles: validBundles,
       });
       setSubmitFeedback({
         type: "success",
