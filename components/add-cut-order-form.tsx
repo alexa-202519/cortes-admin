@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useState, useEffect } from "react";
+import { FormEvent, useState, useEffect, useMemo } from "react";
 import { createCutOrder } from "@/lib/services/cut-orders";
 import { fetchLocations, type Location } from "@/lib/services/locations";
 import { fetchMaterials } from "@/lib/services/materials";
@@ -54,6 +54,44 @@ export function AddCutOrderForm({ onCancel, onCreated }: Props) {
   const [materials, setMaterials] = useState<Material[]>([]);
   const [isLoadingMaterials, setIsLoadingMaterials] = useState(true);
   const [selectedMaterialId, setSelectedMaterialId] = useState("");
+  
+  // Material Combobox State
+  const [materialSearch, setMaterialSearch] = useState("");
+  const [isMaterialDropdownOpen, setIsMaterialDropdownOpen] = useState(false);
+
+  // Sync material search with selection
+  useEffect(() => {
+    if (selectedMaterialId) {
+      const mat = materials.find((m) => m.id === selectedMaterialId);
+      if (mat) {
+        setMaterialSearch(mat.nombre);
+      }
+    } else {
+      setMaterialSearch("");
+    }
+  }, [selectedMaterialId, materials]);
+
+  const handleMaterialBlur = () => {
+    setTimeout(() => {
+      setIsMaterialDropdownOpen(false);
+      if (selectedMaterialId) {
+        const mat = materials.find((m) => m.id === selectedMaterialId);
+        if (mat) setMaterialSearch(mat.nombre);
+      } else {
+        setMaterialSearch("");
+      }
+    }, 200);
+  };
+
+  const filteredMaterials = useMemo(() => {
+    if (!materialSearch) return materials;
+    const lower = materialSearch.toLowerCase();
+    return materials.filter(
+      (m) =>
+        m.nombre.toLowerCase().includes(lower) ||
+        (m.codigo && m.codigo.toLowerCase().includes(lower))
+    );
+  }, [materials, materialSearch]);
 
   useEffect(() => {
     const loadLocations = async () => {
@@ -248,23 +286,53 @@ export function AddCutOrderForm({ onCancel, onCreated }: Props) {
               />
             </div>
           </div>
-          <div>
+          <div className="relative">
             <label className="text-xs font-semibold uppercase tracking-wide text-[var(--primary)]">
               Tipo de Material
             </label>
-            <select
-              value={selectedMaterialId}
-              onChange={(event) => setSelectedMaterialId(event.target.value)}
+            <input
+              type="text"
+              value={materialSearch}
+              onChange={(e) => {
+                setMaterialSearch(e.target.value);
+                setIsMaterialDropdownOpen(true);
+                if (e.target.value === "") setSelectedMaterialId("");
+              }}
+              onFocus={() => setIsMaterialDropdownOpen(true)}
+              onBlur={handleMaterialBlur}
               disabled={isLoadingMaterials}
+              placeholder="Buscar material..."
               className="mt-2 w-full rounded-md border border-[var(--primary-muted)] px-4 py-2 text-sm text-[var(--primary-dark)] focus:border-[var(--primary)] focus:outline-none disabled:bg-gray-100"
-            >
-              <option value="">Selecciona un material</option>
-              {materials.map((material) => (
-                <option key={material.id} value={material.id}>
-                  {material.nombre}
-                </option>
-              ))}
-            </select>
+            />
+            {isMaterialDropdownOpen && (
+              <div className="absolute z-10 mt-1 max-h-60 w-full overflow-auto rounded-md border border-[var(--primary-muted)] bg-white shadow-lg">
+                {filteredMaterials.length === 0 ? (
+                  <div className="px-3 py-2 text-sm text-gray-500">
+                    No se encontraron materiales
+                  </div>
+                ) : (
+                  filteredMaterials.map((mat) => (
+                    <button
+                      key={mat.id}
+                      type="button"
+                      onClick={() => {
+                        setSelectedMaterialId(mat.id);
+                        setMaterialSearch(mat.nombre);
+                        setIsMaterialDropdownOpen(false);
+                      }}
+                      className="w-full border-b border-gray-50 px-3 py-2 text-left text-sm text-[var(--primary-dark)] last:border-0 hover:bg-[var(--primary-soft)]"
+                    >
+                      <div className="font-medium">{mat.nombre}</div>
+                      {mat.codigo && (
+                        <div className="text-xs text-[var(--primary)]">
+                          {mat.codigo}
+                        </div>
+                      )}
+                    </button>
+                  ))
+                )}
+              </div>
+            )}
           </div>
         </div>
 
